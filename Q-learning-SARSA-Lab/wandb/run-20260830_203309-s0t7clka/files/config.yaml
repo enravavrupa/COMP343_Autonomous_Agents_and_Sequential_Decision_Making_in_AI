@@ -1,0 +1,49 @@
+_wandb:
+    value:
+        cli_version: 0.28.2
+        e:
+            1x3uv707kddtm6bwhqctap21txa6eppc:
+                codePath: compare_policies.py
+                codePathLocal: compare_policies.py
+                cpu_count: 8
+                cpu_count_logical: 16
+                cudaVersion: "12.5"
+                disk:
+                    /:
+                        total: "369124249600"
+                        used: "357842313216"
+                email: apurvavarne@gmail.com
+                executable: C:\Users\ASUS\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe
+                gpu: NVIDIA GeForce RTX 3060 Laptop GPU
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 3840
+                      memoryTotal: "6442450944"
+                      name: NVIDIA GeForce RTX 3060 Laptop GPU
+                      uuid: GPU-457703ca-68eb-f259-250e-bfab1d5a61b7
+                host: DESKTOP-KK1SAKK
+                memory:
+                    total: "16388050944"
+                os: Windows-10-10.0.26200-SP0
+                program: c:\Users\ASUS\Desktop\Q learning\compare_policies.py
+                python: CPython 3.11.9
+                root: C:\Users\ASUS\Desktop\Q learning
+                startedAt: "2026-08-30T15:03:09.160828Z"
+                writerId: 1x3uv707kddtm6bwhqctap21txa6eppc
+        m: []
+        python_version: 3.11.9
+        t:
+            "3":
+                - 2
+                - 16
+            "4": 3.11.9
+            "5": 0.28.2
+            "8":
+                - 3
+            "12": 0.28.2
+            "13": windows-amd64
+num_episodes:
+    value: 4000
+num_seeds:
+    value: 10

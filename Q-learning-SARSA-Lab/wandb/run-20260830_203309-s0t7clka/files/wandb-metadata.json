@@ -1,0 +1,36 @@
+{
+  "os":  "Windows-10-10.0.26200-SP0",
+  "python":  "CPython 3.11.9",
+  "startedAt":  "2026-08-30T15:03:09.160828Z",
+  "program":  "c:\\Users\\ASUS\\Desktop\\Q learning\\compare_policies.py",
+  "codePath":  "compare_policies.py",
+  "codePathLocal":  "compare_policies.py",
+  "email":  "apurvavarne@gmail.com",
+  "root":  "C:\\Users\\ASUS\\Desktop\\Q learning",
+  "host":  "DESKTOP-KK1SAKK",
+  "executable":  "C:\\Users\\ASUS\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\\python.exe",
+  "cpu_count":  8,
+  "cpu_count_logical":  16,
+  "gpu":  "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "369124249600",
+      "used":  "357842313216"
+    }
+  },
+  "memory":  {
+    "total":  "16388050944"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 3060 Laptop GPU",
+      "memoryTotal":  "6442450944",
+      "cudaCores":  3840,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-457703ca-68eb-f259-250e-bfab1d5a61b7"
+    }
+  ],
+  "cudaVersion":  "12.5",
+  "writerId":  "1x3uv707kddtm6bwhqctap21txa6eppc"
+}
