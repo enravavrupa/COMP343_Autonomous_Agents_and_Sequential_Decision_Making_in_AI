@@ -1,0 +1,30 @@
+[
+  {
+    "role": "system",
+    "content": "You are an agent on a warehouse floor\n\nYou may respond with only one JSOn object per turn. It must be of the shape:\n{\"thought\": \"<your reasoning>\", \"action\": \"<action name>\", \"action_input\": {<args>}}\n\nThe actions available to you are:\n\n1. \"action\": lookup_digital_database -> \"action_input\": {\"book_id\": \"<str>\"}\n\n2. \"action\": check_shelf -> \"action_input\": \"action_input\": {\"book_id\": \"<str>\", \"shelf_id\": \"<str>\"}\n    The robot checks the shelf and compares that database with the digital database\n    check_status is NULL when the check disagreed with the digital database but with such a low\n    probability that case you do not know for sure even now\n\n3. \"action\": get_robot_state -> \"action_input\": {\"robot_id\": \"<str>\"}\n    \n4. \"action\": verify_dispatch_smt  -> \"action_input\": {\"books\": [{\"id\": \"<str>\", \"weight\": <int>}, ...], \"robots\": [{\"id\": \"<str>\", \"capacity\": <int>, \"battery_pct\": <int>,\n        \"min_battery\": <int>, \"drain_rate\": <float>}], ...}\n        each robot may also carry a \"drain_rate\" (percentage points of\n        battery per kg carried, default 0) -- only the \"drain\" test\n        case (Task 4) states one in the request; parse it into the\n        payload the same way you already parse \"minimum battery\n        threshold\" into min_battery.\n\n5. \"action\": ask_user -> \"action_input\": {\"question\": \"<str>\"}\n\n6. \"action\": finish -> \"action_input\": {\"answer\": \"<str>\", \"available\": <bool>}\n\nWhen you get available, call finish and do not loop further.\n\nPlease note after an unavailable observation, the agent is not allowed to submit the same action_input. It must either \nreflect on the diagnostic results or propose a different (relaxed) payload [remove overly large books] or call ask_user if the relxation depends\non the user's preference.\n\nPlease also note that you must never call finish while claiming feasibility unless the latest verify_dispatch_smt\nobservation on this plan was available\n\nPlease also never call finish with \"available\": True unless the most recent check_shelf's check_status was not None\n"
+  },
+  {
+    "role": "user",
+    "content": "Is 'book-2' available? I want to borrow it"
+  },
+  {
+    "role": "assistant",
+    "content": "{\"thought\":\"First check the digital database for book-2 to find its recorded location and status; then I'll inspect the shelf if needed. I'll start by querying the digital database for book-2.\",\"action\":\"lookup_digital_database\",\"action_input\":{\"book_id\":\"book-2\"}}"
+  },
+  {
+    "role": "user",
+    "content": "{\"id\": \"book-2\", \"title\": \"Design Patterns\", \"shelf_id\": \"shelf-14A\", \"weight_kg\": 1.2, \"status\": \"checked_out\", \"last_confirmed_at\": null}"
+  },
+  {
+    "role": "assistant",
+    "content": "{\"thought\":\"Database shows book-2 is marked 'checked_out' and last_confirmed_at is null, so I should inspect shelf-14A to verify whether the book is physically present before declaring availability.\",\"action\":\"check_shelf\",\"action_input\":{\"book_id\":\"book-2\",\"shelf_id\":\"shelf-14A\"}}"
+  },
+  {
+    "role": "user",
+    "content": "{\"check_status\": \"checked_out\", \"correct_prob\": 0.7220361432711174, \"difference\": false, \"content\": \"There is no difference between the digital database and the shelves\"}"
+  },
+  {
+    "role": "assistant",
+    "content": "{\"thought\":\"The digital record shows book-2 is 'checked_out' and the physical shelf check on shelf-14A confirmed no copy present (check_status 'checked_out', correct_prob ~0.722). Therefore the book is not available to borrow now. Offer to place a hold or notify when returned.\",\"action\":\"finish\",\"action_input\":{\"answer\":\"book-2 (Design Patterns) is currently checked out and not available. I can place a hold for you or notify you when it is returned\u2014what would you like me to do?\",\"available\":false}}"
+  }
+]
