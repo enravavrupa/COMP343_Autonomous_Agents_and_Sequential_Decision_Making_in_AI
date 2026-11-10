@@ -1,0 +1,22 @@
+[
+  {
+    "role": "system",
+    "content": "You are an agent on a warehouse floor\n\nYou may respond with only one JSOn object per turn. It must be of the shape:\n{\"thought\": \"<your reasoning>\", \"action\": \"<action name>\", \"action_input\": {<args>}}\n\nThe actions available to you are:\n\n1. \"action\": verify_dispatch_smt  -> \"action_input\": {\"packages\": [{\"id\": \"<str>\", \"weight\": <int>}, ...], \"agvs\": [{\"id\": \"<str>\", \"capacity\": <int>, \"battery_pct\": <int>,\n        \"min_battery\": <int>, \"drain_rate\": <float>}], ...}\n        each AGV may also carry a \"drain_rate\" (percentage points of\n        battery per kg carried, default 0) -- only the \"drain\" test\n        case (Task 4) states one in the request; parse it into the\n        payload the same way you already parse \"minimum battery\n        threshold\" into min_battery.\n\n2. \"action\": ask_user -> \"action_input\": {\"question\": \"<str>\"}\n\n3. \"action\": finish -> \"action_input\": {\"answer\": \"<str>\", \"assignments\": {...}}\n\nWhen you get SATISFIABLE, call finish and do not loop further.\n\nPlease note after an UNSATISFIABLE observation, the agent is not allowed to submite the same action_input. It must either \nreflect on the diagnostic results or propose a different (relaxed) payload [remove overly large packages] or call ask_user if the relxation depends\non the user's preference.\n\nPlease also note that you must never call finish while claiming feasibility unless the latest verify_dispatch_smt\nobservation on this plan was SATISFIABLE"
+  },
+  {
+    "role": "user",
+    "content": "Allocate Item-1 (10kg) and Item-2 (15kg) across AGV-A (Capacity 30kg, Battery 80%) and AGV-B (Capacity 20kg, Battery 50%). Minimum battery threshold is 25%."
+  },
+  {
+    "role": "assistant",
+    "content": "{\"thought\":\"Prepare SMT verification with two packages (Item-1 10kg, Item-2 15kg) and two AGVs. Both AGVs share minimum battery threshold 25%. No drain_rate provided, so default 0. Submit verify_dispatch_smt to check feasibility of assigning items under capacity and battery constraints.\",\"action\":\"verify_dispatch_smt\",\"action_input\":{\"packages\":[{\"id\":\"Item-1\",\"weight\":10},{\"id\":\"Item-2\",\"weight\":15}],\"agvs\":[{\"id\":\"AGV-A\",\"capacity\":30,\"battery_pct\":80,\"min_battery\":25},{\"id\":\"AGV-B\",\"capacity\":20,\"battery_pct\":50,\"min_battery\":25}]}}"
+  },
+  {
+    "role": "user",
+    "content": "{\"status\": \"SATISFIABLE\", \"assignments\": {\"Item-1\": \"AGV-B\", \"Item-2\": \"AGV-A\"}, \"feedback\": \"Allocation verified mathematically.\"}"
+  },
+  {
+    "role": "assistant",
+    "content": "{\"thought\":\"The SMT check returned SATISFIABLE with a valid assignment. Finalize by reporting the verified allocation and confirming it meets capacity and minimum battery constraints.\",\"action\":\"finish\",\"action_input\":{\"answer\":\"Allocation is feasible and has been verified. Assignments meet capacity and minimum battery constraints.\",\"assignments\":{\"Item-1\":\"AGV-B\",\"Item-2\":\"AGV-A\"}}}"
+  }
+]
