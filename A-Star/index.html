@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A* Lab Visual Map Editor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 900px;
+            width: 100%;
+        }
+        h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; color: #34495e; font-size: 14px; }
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 80px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #2980b9; }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 6px;
+        }
+        .tool {
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+        .tool.active { border-color: #2c3e50; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+        
+        #tool-start { background-color: #2ecc71; color: white; }
+        #tool-goal { background-color: #e74c3c; color: white; }
+        #tool-obstacle { background-color: #34495e; color: white; }
+        #tool-eraser { background-color: #ecf0f1; border: 1px solid #bdc3c7; color: #333; }
+        
+        .grid-container {
+            display: inline-grid;
+            gap: 1px;
+            background-color: #bdc3c7;
+            border: 2px solid #7f8c8d;
+            margin-bottom: 20px;
+            user-select: none; /* Prevents text selection while dragging */
+        }
+        .cell {
+            width: 25px;
+            height: 25px;
+            background-color: white;
+            cursor: pointer;
+        }
+        .cell:hover { opacity: 0.8; }
+        .cell.start { background-color: #2ecc71; }
+        .cell.goal { background-color: #e74c3c; }
+        .cell.obstacle { background-color: #34495e; }
+
+        .export-btn { width: 100%; font-size: 16px; padding: 15px; background-color: #27ae60; }
+        .export-btn:hover { background-color: #2196f3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🗺️ A* Visual Map Editor</h2>
+    
+    <div class="controls">
+        <div class="form-group">
+            <label for="width">Width (X)</label>
+            <input type="number" id="width" value="20" min="5" max="100">
+        </div>
+        <div class="form-group">
+            <label for="height">Height (Y)</label>
+            <input type="number" id="height" value="15" min="5" max="100">
+        </div>
+        <button onclick="initGrid()">Reset & Resize Grid</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="tool active" id="tool-obstacle" onclick="setTool('obstacle')">⬛ Draw Obstacles</div>
+        <div class="tool" id="tool-start" onclick="setTool('start')">🟩 Set Start</div>
+        <div class="tool" id="tool-goal" onclick="setTool('goal')">🟥 Set Goal</div>
+        <div class="tool" id="tool-eraser" onclick="setTool('eraser')">⬜ Eraser</div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <div id="grid" class="grid-container"></div>
+    </div>
+
+    <button class="export-btn" onclick="generateConfigPythonFile()">💾 Download config.py</button>
+</div>
+
+<script>
+    let currentTool = 'obstacle';
+    let isMouseDown = false;
+    let gridData = {}; // Stores the state of each coordinate 'x,y' -> 'obstacle', 'start', 'goal'
+    let startCoord = null;
+    let goalCoord = null;
+
+    // Handle mouse drag state
+    document.addEventListener('mousedown', () => isMouseDown = true);
+    document.addEventListener('mouseup', () => isMouseDown = false);
+
+    function setTool(toolName) {
+        currentTool = toolName;
+        document.querySelectorAll('.tool').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tool-${toolName}`).classList.add('active');
+    }
+
+    function initGrid() {
+        const width = parseInt(document.getElementById('width').value);
+        const height = parseInt(document.getElementById('height').value);
+        const grid = document.getElementById('grid');
+        
+        // Reset state
+        grid.innerHTML = '';
+        gridData = {};
+        startCoord = null;
+        goalCoord = null;
+        
+        // Setup CSS Grid columns
+        grid.style.gridTemplateColumns = `repeat(${width}, 25px)`;
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                
+                // Allow clicking or dragging to paint
+                cell.addEventListener('mousedown', () => applyTool(cell, x, y));
+                cell.addEventListener('mouseenter', () => {
+                    if (isMouseDown) applyTool(cell, x, y);
+                });
+                
+                grid.appendChild(cell);
+            }
+        }
+
+        // Set default Start and Goal just so they exist
+        applyTool(document.querySelector('.cell[data-x="0"][data-y="0"]'), 0, 0, 'start');
+        applyTool(document.querySelector(`.cell[data-x="${width-1}"][data-y="${height-1}"]`), width-1, height-1, 'goal');
+    }
+
+    function applyTool(cell, x, y, overrideTool = null) {
+        const tool = overrideTool || currentTool;
+        const coordKey = `${x},${y}`;
+
+        // If placing a unique tile (Start/Goal), remove the old one first
+        if (tool === 'start') {
+            if (startCoord) {
+                const oldStart = document.querySelector(`.cell[data-x="${startCoord.x}"][data-y="${startCoord.y}"]`);
+                if (oldStart) oldStart.className = 'cell';
+                delete gridData[`${startCoord.x},${startCoord.y}`];
+            }
+            startCoord = { x, y };
+        } else if (tool === 'goal') {
+            if (goalCoord) {
+                const oldGoal = document.querySelector(`.cell[data-x="${goalCoord.x}"][data-y="${goalCoord.y}"]`);
+                if (oldGoal) oldGoal.className = 'cell';
+                delete gridData[`${goalCoord.x},${goalCoord.y}`];
+            }
+            goalCoord = { x, y };
+        }
+
+        // Apply new class and save state
+        if (tool === 'eraser') {
+            cell.className = 'cell';
+            delete gridData[coordKey];
+            if (startCoord && startCoord.x === x && startCoord.y === y) startCoord = null;
+            if (goalCoord && goalCoord.x === x && goalCoord.y === y) goalCoord = null;
+        } else {
+            cell.className = `cell ${tool}`;
+            gridData[coordKey] = tool;
+        }
+    }
+
+    function generateConfigPythonFile() {
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        
+        // Extract obstacles
+        const obstacles = [];
+        for (const [coord, type] of Object.entries(gridData)) {
+            if (type === 'obstacle') {
+                const [x, y] = coord.split(',');
+                obstacles.push(`(${x}, ${y})`);
+            }
+        }
+
+        // Fallbacks if start/goal were erased
+        const sx = startCoord ? startCoord.x : 0;
+        const sy = startCoord ? startCoord.y : 0;
+        const gx = goalCoord ? goalCoord.x : width - 1;
+        const gy = goalCoord ? goalCoord.y : height - 1;
+
+        // Construct the python string
+        const fileContent = `# =====================================================================
+# AUTOMATICALLY GENERATED LAB CONFIGURATION FILE
+# Generated via interactive visual map editor
+# =====================================================================
+
+# Environment Geometry Settings
+DEFAULT_WIDTH = ${width}
+DEFAULT_HEIGHT = ${height}
+
+# Mapping Logic Controls
+USE_RANDOM_MAP = False
+OBSTACLE_DENSITY = 0.0 # Disabled: using custom layout
+
+# Navigation Path Coordinates
+START_POSITION = (${sx}, ${sy})
+GOAL_POSITION = (${gx}, ${gy})
+
+# Custom Hardcoded Map Obstacles
+CUSTOM_OBSTACLES = [
+    ${obstacles.join(',\n    ')}
+]
+
+# Visualizer Stylings
+COLOR_MAP = 'gray_r'
+START_COLOR = 'go'
+GOAL_COLOR = 'ro'
+PATH_COLOR = 'b-'
+`;
+
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.download = 'config.py';
+        link.href = window.URL.createObjectURL(blob);
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+    }
+
+    // Initialize the grid on first load
+    window.onload = initGrid;
+</script>
+
+</body>
+</html>
